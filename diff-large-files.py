@@ -54,7 +54,15 @@ def getline(file, buffer):
     else:
         return file.readline(), buffer
 
+def join_prepend(prefix, list):
+    return "".join("%s%s"%(prefix,l) for l in list)
+
 def run(left, right):
+    seendiff=False
+    n_bef = 10
+    n_aft = 10
+    ctx_bef = []
+    ctx_aft = 0
     buf_l, buf_r = [], []
     while 1:
         line_l, buf_l = getline(left, buf_l)
@@ -66,10 +74,31 @@ def run(left, right):
         elif not line_l:
             print "+"+line_r,
         elif line_l == line_r:
-            print " "+line_l,
+            if ctx_aft:
+                print join_prepend(" ",[line_l]),
+                ctx_aft-=1
+            else:
+                # keep a sliding window
+                ctx_bef = ctx_bef[-(n_bef-1):] + [line_l]
         else:
+            if not seendiff:
+                print "--- %s  %s\n+++ %s  %s"%(left.name,"dateTODO",right.name,"dateTODO")
+                # TODO file-modification-time
+                seendiff=True
             out_l, out_r, buf_l, buf_r = resync(line_l, line_r, left, right)
-            print "".join(["-%s"%(l,) for l in out_l]), "".join(["+%s"%(r,) for r in out_r]),
+            if not ctx_aft:
+                print "@@ -0,0 +0,0 @@"
+                # TODO: Getting the line numbers in here would require
+                # buffering some lines and then printing the whole
+                # chunk, to get the line numbers right. At the moment,
+                # dwdiff --diff-input accepts this hack so I'm not
+                # sure I can be bothered.
+            if ctx_bef:
+                print join_prepend(" ", ctx_bef),
+            print join_prepend("-", out_l),
+            print join_prepend("+", out_r),
+            ctx_bef = []
+            ctx_aft = n_aft
 
 try:
     left=open(sys.argv[1], 'r')
