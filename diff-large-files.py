@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys
+import sys, argparse
 
 def resync(line_l, line_r, left, right):
     """Return a quadruple of
@@ -57,10 +57,10 @@ def getline(file, buffer):
 def join_prepend(prefix, list):
     return "".join("%s%s"%(prefix,l) for l in list)
 
-def run(left, right):
+def run(left, right, n_unified):
     seendiff=False
-    n_bef = 10
-    n_aft = 10
+    n_bef = n_unified
+    n_aft = n_unified
     ctx_bef = []
     ctx_aft = 0
     buf_l, buf_r = [], []
@@ -77,16 +77,17 @@ def run(left, right):
             if ctx_aft:
                 print join_prepend(" ",[line_l]),
                 ctx_aft-=1
-            else:
-                # keep a sliding window
-                ctx_bef = ctx_bef[-(n_bef-1):] + [line_l]
+            elif n_bef:
+                # Keep a sliding window:
+                ctx_bef.append(line_l)
+                ctx_bef = ctx_bef[-n_bef:]
         else:
             if not seendiff:
                 print "--- %s  %s\n+++ %s  %s"%(left.name,"dateTODO",right.name,"dateTODO")
                 # TODO file-modification-time
                 seendiff=True
             out_l, out_r, buf_l, buf_r = resync(line_l, line_r, left, right)
-            if not ctx_aft:
+            if not ctx_aft: # TODO: should also not print if no ctx_bef (or something; ie. when we're right after the previous resync)
                 print "@@ -0,0 +0,0 @@"
                 # TODO: Getting the line numbers in here would require
                 # buffering some lines and then printing the whole
@@ -100,11 +101,25 @@ def run(left, right):
             ctx_bef = []
             ctx_aft = n_aft
 
-try:
-    left=open(sys.argv[1], 'r')
-    right=open(sys.argv[2], 'r')
-    run(left, right)
-except IOError, e:
-    print e
-    sys.exit(1)
 
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('left',
+                        type=str,
+                        help='Old file')
+    parser.add_argument('right',
+                        type=str,
+                        help='New file')
+    parser.add_argument('-U', '--unified',
+                        metavar='NUM',
+                        type=int,
+                        default=3,
+                        help='How many context lines to show before and after.')
+    args = vars(parser.parse_args())
+    left=open(args['left'], 'r')
+    right=open(args['right'], 'r')
+    run(left, right, args['unified'])
+
+if __name__ == "__main__":
+    sys.exit(main())
