@@ -1,1 +1,18 @@
-$ python2 diff-large-files.py fileA fileB
+Usage:
+
+    $ python2 diff-large-files.py fileA fileB
+
+Pass -h to get options. Output is in unified diff format, possible to
+pipe into `dwdiff --diff-input` to get word-diffs.
+
+The script is meant to give visually inspectable diffs of large files
+with few differences, to avoid the memory consumption issue with
+diffing large files. When a difference is found, it moves forth in
+both files a line at a time, looking for a line in one file that
+matches a previously seen line in the other file.
+
+This simple method works well for some types of files, but can easily
+match the wrong lines if e.g. every other line is identical (or there
+are a lot of identical lines in the files). In that case, you're
+probably better off using `split` to split your input files and then
+sending each file-pair into regular `diff`.
