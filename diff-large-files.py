@@ -70,12 +70,12 @@ def run(left, right, n_unified):
         if not line_l and not line_r:
             break
         elif not line_r:
-            print "-"+line_l,
+            sys.stdout.write("-"+line_l)
         elif not line_l:
-            print "+"+line_r,
+            sys.stdout.write("+"+line_r)
         elif line_l == line_r:
             if ctx_aft:
-                print join_prepend(" ",[line_l]),
+                sys.stdout.write(join_prepend(" ",[line_l]))
                 ctx_aft-=1
             elif n_bef:
                 # Keep a sliding window:
@@ -83,21 +83,20 @@ def run(left, right, n_unified):
                 ctx_bef = ctx_bef[-n_bef:]
         else:
             if not seendiff:
-                print "--- %s  %s\n+++ %s  %s"%(left.name,"dateTODO",right.name,"dateTODO")
+                sys.stdout.write("--- %s  %s\n+++ %s  %s\n"%(left.name,"dateTODO",right.name,"dateTODO"))
                 # TODO file-modification-time
                 seendiff=True
             out_l, out_r, buf_l, buf_r = resync(line_l, line_r, left, right)
             if not ctx_aft: # TODO: should also not print if no ctx_bef (or something; ie. when we're right after the previous resync)
-                print "@@ -0,0 +0,0 @@"
+                sys.stdout.write("@@ -0,0 +0,0 @@\n")
                 # TODO: Getting the line numbers in here would require
                 # buffering some lines and then printing the whole
                 # chunk, to get the line numbers right. At the moment,
                 # dwdiff --diff-input accepts this hack so I'm not
                 # sure I can be bothered.
-            if ctx_bef:
-                print join_prepend(" ", ctx_bef),
-            print join_prepend("-", out_l),
-            print join_prepend("+", out_r),
+            sys.stdout.write(join_prepend(" ", ctx_bef))
+            sys.stdout.write(join_prepend("-", out_l))
+            sys.stdout.write(join_prepend("+", out_r))
             ctx_bef = []
             ctx_aft = n_aft
 
